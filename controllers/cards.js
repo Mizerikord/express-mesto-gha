@@ -72,20 +72,26 @@ const cardLike = (req, res) => {
     req.params.cardId,
     { $addToSet: { likes: req.user._id } },
     { new: true },
-  )
+  ).orFail(() => {
+    throw new Error('NotFound');
+  })
     .then(() => res.send({ message: 'Лайк' }))
     .catch((err) => {
-      if (err.name === 'CastError') {
+      if (err.message === 'NotFound') {
         res.status(404).send({
           message: 'Card Not Found',
+          err: err.message,
+          stack: err.stack,
         });
+        return;
       }
-      if (err.name === 'CastError') {
+      if (err.message === 'CastError') {
         res.status(400).send({
           message: 'Некорректный ID',
           err: err.message,
           stack: err.stack,
         });
+        return;
       }
       res.status(500).send({
         message: 'Internal Server Error',
@@ -98,14 +104,17 @@ const cardLike = (req, res) => {
 const cardLikeDelete = (req, res) => {
   CardModel.findByIdAndUpdate(
     req.params.cardId,
-    { $pull: { likes: req.user._id } }, // убрать _id из массива
+    { $pull: { likes: req.user._id } },
     { new: true },
   )
     .then(() => res.send({ message: 'ДизЛайк' }))
     .catch((err) => {
+      console.log(err.message, err.stack, err.name);
       if (err.name === 'CastError') {
         res.status(404).send({
           message: 'Card Not Found',
+          err: err.message,
+          stack: err.stack,
         });
       }
       if (err.name === 'CastError') {

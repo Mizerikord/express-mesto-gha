@@ -23,7 +23,6 @@ const getUserById = (req, res) => {
       res.send(user);
     })
     .catch((err) => {
-      console.log(err.name);
       if (err.message === 'NotFound') {
         res.status(404).send({
           message: 'User Not Found',
@@ -32,7 +31,7 @@ const getUserById = (req, res) => {
       }
       if (err.name === 'CastError') {
         res.status(400).send({
-          message: 'User Not Found',
+          message: 'Некорректный ID',
         });
         return;
       }
@@ -77,7 +76,6 @@ const patchUser = (req, res) => {
     )
     .then((user) => { res.status(200).send({ user }); })
     .catch((err) => {
-      console.log(err.name);
       if (err.name === 'ValidationError') {
         res.status(400).send({
           message: 'Некорректные данные',
