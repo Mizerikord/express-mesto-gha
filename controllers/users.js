@@ -73,14 +73,24 @@ const patchUser = (req, res) => {
     .findByIdAndUpdate(
       req.user._id,
       { name, about },
-      { new: true },
+      { new: true, runValidators: true },
     )
     .then((user) => { res.status(200).send({ user }); })
-    .catch((err) => res.status(500).send({
-      message: 'Произошла ошибка',
-      err: err.message,
-      stack: err.stack,
-    }));
+    .catch((err) => {
+      console.log(err.name);
+      if (err.name === 'ValidationError') {
+        res.status(400).send({
+          message: 'Некорректные данные',
+          err: err.message,
+          stack: err.stack,
+        });
+      }
+      res.status(500).send({
+        message: 'Произошла ошибка',
+        err: err.message,
+        stack: err.stack,
+      });
+    });
 };
 
 const patchUserAvatar = (req, res) => {

@@ -41,13 +41,21 @@ const deleteCard = (req, res) => {
     .orFail(() => {
       throw new Error('NotFound');
     })
-    .then((card) => {
-      res.send(card);
+    .then(() => {
+      res.status(200).send({
+        message: 'Карточка успешно удалена',
+      });
     })
     .catch((err) => {
       if (err.message === 'NotFound') {
         res.status(404).send({
           message: 'User Not Found',
+        });
+        return;
+      }
+      if (err.message === 'CastError') {
+        res.status(400).send({
+          message: 'Некорректный ID',
         });
         return;
       }
@@ -62,7 +70,7 @@ const deleteCard = (req, res) => {
 const cardLike = (req, res) => {
   CardModel.findByIdAndUpdate(
     req.params.cardId,
-    { $addToSet: { likes: req.user._id } }, // добавить _id в массив, если его там нет
+    { $addToSet: { likes: req.user._id } },
     { new: true },
   )
     .then(() => res.send({ message: 'Лайк' }))
@@ -70,6 +78,13 @@ const cardLike = (req, res) => {
       if (err.name === 'CastError') {
         res.status(404).send({
           message: 'Card Not Found',
+        });
+      }
+      if (err.name === 'CastError') {
+        res.status(400).send({
+          message: 'Некорректный ID',
+          err: err.message,
+          stack: err.stack,
         });
       }
       res.status(500).send({
@@ -91,6 +106,13 @@ const cardLikeDelete = (req, res) => {
       if (err.name === 'CastError') {
         res.status(404).send({
           message: 'Card Not Found',
+        });
+      }
+      if (err.name === 'CastError') {
+        res.status(400).send({
+          message: 'Некорректный ID',
+          err: err.message,
+          stack: err.stack,
         });
       }
       res.status(500).send({
