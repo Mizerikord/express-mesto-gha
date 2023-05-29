@@ -37,12 +37,13 @@ const createCard = (req, res) => {
 
 const deleteCard = (req, res) => {
   CardModel
-    .findById(req.params.cardId)
+    .findByIdAndRemove(req.params.cardId)
     .orFail(() => {
       throw new Error('NotFound');
     })
-    .then(() => {
+    .then((card) => {
       res.status(200).send({
+        data: card,
         message: 'Карточка успешно удалена',
       });
     })
@@ -85,7 +86,7 @@ const cardLike = (req, res) => {
         });
         return;
       }
-      if (err.message === 'CastError') {
+      if (err.name === 'CastError') {
         res.status(400).send({
           message: 'Некорректный ID',
           err: err.message,
@@ -106,16 +107,18 @@ const cardLikeDelete = (req, res) => {
     req.params.cardId,
     { $pull: { likes: req.user._id } },
     { new: true },
-  )
+  ).orFail(() => {
+    throw new Error('NotFound');
+  })
     .then(() => res.send({ message: 'ДизЛайк' }))
     .catch((err) => {
-      console.log(err.message, err.stack, err.name);
-      if (err.name === 'CastError') {
+      if (err.message === 'NotFound') {
         res.status(404).send({
           message: 'Card Not Found',
           err: err.message,
           stack: err.stack,
         });
+        return;
       }
       if (err.name === 'CastError') {
         res.status(400).send({
@@ -123,6 +126,7 @@ const cardLikeDelete = (req, res) => {
           err: err.message,
           stack: err.stack,
         });
+        return;
       }
       res.status(500).send({
         message: 'Internal Server Error',
