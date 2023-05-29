@@ -24,7 +24,7 @@ const getUserById = (req, res) => {
     })
     .catch((err) => {
       if (err.message === 'NotFound') {
-        res.status(404).send({
+        res.status(400).send({
           message: 'User Not Found',
         });
         return;
@@ -68,7 +68,7 @@ const patchUser = (req, res) => {
       { name, about },
       { new: true },
     )
-    .then((user) => { res.status(201).send({ user }); })
+    .then((user) => { res.status(200).send({ user }); })
     .catch((err) => res.status(500).send({
       message: 'Произошла ошибка',
       err: err.message,
