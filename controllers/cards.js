@@ -26,6 +26,7 @@ const createCard = (req, res) => {
           err: err.message,
           stack: err.stack,
         });
+        return;
       }
       res.status(500).send({
         message: 'Internal Server Error',
@@ -50,7 +51,7 @@ const deleteCard = (req, res) => {
     .catch((err) => {
       if (err.message === 'NotFound') {
         res.status(404).send({
-          message: 'User Not Found',
+          message: 'Card Not Found',
         });
         return;
       }

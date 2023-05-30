@@ -57,6 +57,7 @@ const createUser = (req, res) => {
           err: err.message,
           stack: err.stack,
         });
+        return;
       }
       res.status(500).send({
         message: 'Internal Server Error',
@@ -82,6 +83,7 @@ const patchUser = (req, res) => {
           err: err.message,
           stack: err.stack,
         });
+        return;
       }
       res.status(500).send({
         message: 'Произошла ошибка',
@@ -96,7 +98,7 @@ const patchUserAvatar = (req, res) => {
   UserModel.findByIdAndUpdate(
     req.user._id,
     { avatar },
-    { new: true },
+    { new: true, runValidators: true },
   )
     .then((user) => { res.send({ data: user }); })
     .catch((err) => res.status(500).send({
