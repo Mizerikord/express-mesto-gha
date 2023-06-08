@@ -1,73 +1,62 @@
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+
 const UserModel = require('../models/user');
 
-const getUsers = async (req, res) => {
+const { JWT_SECRET } = process.env;
+
+const ValidationError = require('../errors/ValidationErrors');
+const AutorizationError = require('../errors/AutorizationErrors');
+const NotFoundError = require('../errors/NotFoundError');
+
+const getUsers = async (req, res, next) => {
   try {
     const users = await UserModel.find({});
     res.send(users);
   } catch (err) {
-    res.status(500).send({
-      message: 'Internal Server Error',
-      err: err.message,
-      stack: err.stack,
-    });
+    next(err);
   }
 };
 
-const getUserById = (req, res) => {
+const getUserById = (req, res, next) => {
   UserModel
     .findById(req.params.userId)
     .orFail(() => {
-      throw new Error('NotFound');
+      throw new Error('Пользователь не найден');
     })
     .then((user) => {
       res.send(user);
     })
     .catch((err) => {
       if (err.message === 'NotFound') {
-        res.status(404).send({
-          message: 'User Not Found',
-        });
-        return;
+        throw new NotFoundError('Пользователь не найден');
       }
       if (err.name === 'CastError') {
-        res.status(400).send({
-          message: 'Некорректный ID',
-        });
-        return;
+        throw new ValidationError('Некорректные данные');
       }
-      res.status(500).send({
-        message: 'Internal Server Error',
-        err: err.message,
-        stack: err.stack,
-      });
+      next(err);
     });
 };
 
-const createUser = (req, res) => {
-  const { name, about, avatar } = req.body;
-  UserModel
-    .create({ name, about, avatar })
-    .then((user) => {
-      res.status(201).send(user);
-    })
+const createUser = (req, res, next) => {
+  const {
+    name, about, avatar, email,
+  } = req.body;
+  bcrypt.hash(req.body.password, 10)
+    .then((hash) => UserModel
+      .create({
+        name, about, avatar, email, password: hash,
+      }))
+    .then((user) => res.status(201).send(user))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        res.status(400).send({
-          message: 'Внесены некорректные данные',
-          err: err.message,
-          stack: err.stack,
-        });
-        return;
+        throw new ValidationError('Некорректные данные');
       }
-      res.status(500).send({
-        message: 'Internal Server Error',
-        err: err.message,
-        stack: err.stack,
-      });
-    });
+    })
+    .catch(next);
 };
 
-const patchUser = (req, res) => {
+const patchUser = (req, res, next) => {
   const { name, about } = req.body;
   UserModel
     .findByIdAndUpdate(
@@ -78,22 +67,25 @@ const patchUser = (req, res) => {
     .then((user) => { res.status(200).send({ user }); })
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        res.status(400).send({
-          message: 'Некорректные данные',
-          err: err.message,
-          stack: err.stack,
-        });
-        return;
+        throw new ValidationError('Некорректные данные');
       }
-      res.status(500).send({
-        message: 'Произошла ошибка',
-        err: err.message,
-        stack: err.stack,
-      });
+      next(err);
     });
 };
 
-const patchUserAvatar = (req, res) => {
+const getCurrentUser = (req, res, next) => {
+  const userId = req.user._id;
+  UserModel.findById(userId)
+    .then((user) => {
+      if (!user) {
+        throw new NotFoundError('Пользователь не найден');
+      }
+      res.send(user);
+    })
+    .catch(next);
+};
+
+const patchUserAvatar = (req, res, next) => {
   const { avatar } = req.body;
   UserModel.findByIdAndUpdate(
     req.user._id,
@@ -101,11 +93,24 @@ const patchUserAvatar = (req, res) => {
     { new: true, runValidators: true },
   )
     .then((user) => { res.send({ data: user }); })
-    .catch((err) => res.status(500).send({
-      message: 'Произошла ошибка',
-      err: err.message,
-      stack: err.stack,
-    }));
+    .catch(next);
+};
+
+const login = (req, res, next) => {
+  const { email, password } = req.body;
+  return UserModel.findOne({ email })
+    .then((user) => {
+      if (!user) {
+        throw new AutorizationError('Ошибка авторизации');
+      }
+      if (!bcrypt.compare(password, user.password)) {
+        throw new AutorizationError('Ошибка авторизации');
+      }
+      res.send({
+        token: jwt.sign({ _id: user._id }, JWT_SECRET, { expiresIn: '7d' }),
+      });
+    })
+    .catch(next);
 };
 
 module.exports = {
@@ -114,4 +119,6 @@ module.exports = {
   createUser,
   patchUser,
   patchUserAvatar,
+  login,
+  getCurrentUser,
 };

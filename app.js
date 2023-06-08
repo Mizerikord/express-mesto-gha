@@ -1,6 +1,10 @@
+require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
+const { errors } = require('celebrate');
 const router = require('./routes/index');
+const auth = require('./middlewares/auth');
+const { errorHandler } = require('./middlewares/errorHandler');
 
 const app = express();
 const { PORT = 3000 } = process.env;
@@ -16,15 +20,11 @@ mongoose.connect('mongodb://127.0.0.1:27017/mestodb')
     process.exit();
   });
 
-app.use((req, res, next) => {
-  req.user = {
-    _id: '647378c361e28b541f099b20', // вставьте сюда _id созданного в предыдущем пункте пользователя
-  };
-
-  next();
-});
-
 app.use(router);
+app.use(auth);
+
+app.use(errors());
+app.use(errorHandler);
 
 app.listen(PORT, () => {
   console.log({ message: `Сервер работает на порту ${PORT}` });
