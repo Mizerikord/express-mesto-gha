@@ -74,7 +74,7 @@ const cardLikeDelete = (req, res, next) => {
       if (!card) {
         throw new NotFoundError('Карточка не найдена');
       }
-      res.send({ message: 'ДизЛайк' });
+      res.send({ like: card.likes, message: 'ДизЛайк' });
     })
     .catch(next);
 };

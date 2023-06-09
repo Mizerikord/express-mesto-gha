@@ -52,7 +52,7 @@ const createUser = (req, res, next) => {
       if (!user) {
         throw new NotFoundError('Пользователь не найден');
       }
-      return res.send({
+      return res.status(200).send({
         name: user.name,
         about: user.about,
         avatar: user.avatar,
@@ -61,6 +61,7 @@ const createUser = (req, res, next) => {
       });
     })
     .catch((err) => {
+      console.log(err.code);
       if (err.name === 'ValidationError') {
         throw new ValidationError('Некорректные данные');
       }
@@ -95,7 +96,13 @@ const getCurrentUser = (req, res, next) => {
       if (!user) {
         throw new NotFoundError('Пользователь не найден');
       }
-      res.send(user);
+      return res.status(200).send({
+        name: user.name,
+        about: user.about,
+        avatar: user.avatar,
+        email: user.email,
+        _id: user._id,
+      });
     })
     .catch(next);
 };
@@ -112,6 +119,7 @@ const patchUserAvatar = (req, res, next) => {
 };
 
 const login = (err, req, res, next) => {
+  console.log('123');
   const { email, password } = req.body;
   return UserModel.findOne({ email })
     .then((user) => {
