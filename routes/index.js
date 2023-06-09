@@ -6,13 +6,13 @@ const NotFoundError = require('../errors/NotFoundError');
 const { validateUser } = require('../middlewares/validate');
 const auth = require('../middlewares/auth');
 
-router.post('/signup', validateUser, usersController.createUser);
 router.post('/signin', validateUser, usersController.login);
+router.post('/signup', validateUser, usersController.createUser);
 
 router.use('/users', auth, userRouter);
 router.use('/cards', auth, cardRouter);
 
-router.use('*', () => {
+router.use(() => {
   throw new NotFoundError('Запрашиваемая страница не найдена');
 });
 

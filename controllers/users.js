@@ -48,13 +48,18 @@ const createUser = (req, res, next) => {
       .create({
         name, about, avatar, email, password: hash,
       }))
-    .then((user) => res.status(201).send({
-      name: user.name,
-      about: user.about,
-      avatar: user.avatar,
-      email: user.email,
-      _id: user._id,
-    }))
+    .then((user) => {
+      if (!user) {
+        throw new NotFoundError('Пользователь не найден');
+      }
+      return res.send({
+        name: user.name,
+        about: user.about,
+        avatar: user.avatar,
+        email: user.email,
+        _id: user._id,
+      });
+    })
     .catch((err) => {
       if (err.name === 'ValidationError') {
         throw new ValidationError('Некорректные данные');
@@ -106,12 +111,15 @@ const patchUserAvatar = (req, res, next) => {
     .catch(next);
 };
 
-const login = (req, res, next) => {
+const login = (err, req, res, next) => {
   const { email, password } = req.body;
   return UserModel.findOne({ email })
     .then((user) => {
       if (!user) {
         throw new AutorizationError('Ошибка авторизации');
+      }
+      if (err.code === 400) {
+        throw new ValidationError('Неправильно набран email');
       }
       if (!bcrypt.compare(password, user.password)) {
         throw new AutorizationError('Ошибка авторизации');
