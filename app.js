@@ -21,10 +21,10 @@ mongoose.connect('mongodb://127.0.0.1:27017/mestodb')
   });
 
 app.use(router);
-app.use(auth);
+app.use(auth); // Метод используемый для авторизации
 
-app.use(errors());
-app.use(errorHandler);
+app.use(errors()); // Валидация через Joi
+app.use(errorHandler); // Централизованная обработка ошибок
 
 app.listen(PORT, () => {
   console.log({ message: `Сервер работает на порту ${PORT}` });
