@@ -8,7 +8,7 @@ const { JWT_SECRET } = process.env;
 const ValidationError = require('../errors/ValidationErrors');
 const AutorizationError = require('../errors/AutorizationErrors');
 const NotFoundError = require('../errors/NotFoundError');
-const ConflictError = require('../errors/NotFoundError');
+const DuplicateError = require('../errors/NotFoundError');
 
 const getUsers = async (req, res, next) => {
   try {
@@ -50,7 +50,7 @@ const createUser = (req, res, next) => {
       }))
     .then((user) => {
       if (!user) {
-        throw new NotFoundError('Пользователь не найден');
+        throw new NotFoundError('Не удалось создать пользователя');
       }
       return res.status(200).send({
         name: user.name,
@@ -61,12 +61,12 @@ const createUser = (req, res, next) => {
       });
     })
     .catch((err) => {
-      console.log(err.code);
+      console.log(err);
       if (err.name === 'ValidationError') {
         throw new ValidationError('Некорректные данные');
       }
       if (err.code === 11000) {
-        throw new ConflictError('Такая почта уже зарегестрирована');
+        throw new DuplicateError(`Email '${err.keyValue.email}' уже занят`);
       }
     })
     .catch(next);
@@ -118,16 +118,12 @@ const patchUserAvatar = (req, res, next) => {
     .catch(next);
 };
 
-const login = (err, req, res, next) => {
-  console.log('123');
+const login = (req, res, next) => {
   const { email, password } = req.body;
   return UserModel.findOne({ email })
     .then((user) => {
       if (!user) {
         throw new AutorizationError('Ошибка авторизации');
-      }
-      if (err.code === 400) {
-        throw new ValidationError('Неправильно набран email');
       }
       if (!bcrypt.compare(password, user.password)) {
         throw new AutorizationError('Ошибка авторизации');

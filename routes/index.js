@@ -12,7 +12,7 @@ router.post('/signup', validateUser, usersController.createUser);
 router.use('/users', auth, userRouter);
 router.use('/cards', auth, cardRouter);
 
-router.use(() => {
+router.use('*', () => {
   throw new NotFoundError('Запрашиваемая страница не найдена');
 });
 
