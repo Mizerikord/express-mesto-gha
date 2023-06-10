@@ -25,8 +25,10 @@ const createCard = (req, res, next) => {
       res.status(201).send({
         name: card.name,
         link: card.link,
+        owner: card.owner,
         likes: card.likes,
         createdAt: card.createdAt,
+        _id: card._id,
       });
     })
     .catch((err) => {
