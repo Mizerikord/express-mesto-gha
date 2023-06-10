@@ -6,7 +6,7 @@ router.get('/', usersController.getUsers);
 
 router.get('/me', usersController.getCurrentUser);
 
-router.get('/:userId', usersController.getUserById);
+router.get('/:userId', validateUserData, usersController.getUserById);
 
 router.patch('/me', validateUserData, usersController.patchUser);
 

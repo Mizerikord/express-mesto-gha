@@ -31,9 +31,16 @@ const getUserById = (req, res, next) => {
       if (!user) {
         next(new NotFoundError('Пользователь не найден'));
       }
-      res.status(200).send(user);
+      res.status(200).send({
+        name: user.name,
+        about: user.about,
+        avatar: user.avatar,
+        email: user.email,
+        _id: user._id,
+      });
     })
     .catch((err) => {
+      console.log(err);
       if (err.name === 'CastError') {
         next(new ValidationError('Некорректный Id'));
       }
@@ -164,7 +171,7 @@ const patchUserAvatar = (req, res, next) => {
 
 const login = (req, res, next) => {
   const { email, password } = req.body;
-  return UserModel.findOne({ email })
+  return UserModel.findOne({ email }).select('+password')
     .then((user) => {
       if (!user) {
         next(new AutorizationError('Неверный логин или пароль'));
