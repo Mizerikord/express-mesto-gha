@@ -29,13 +29,13 @@ const getUserById = (req, res, next) => {
     .findById(req.params.userId)
     .then((user) => {
       if (!user) {
-        throw new NotFoundError('Пользователь не найден');
+        next(new NotFoundError('Пользователь не найден'));
       }
       res.status(200).send(user);
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        throw new ValidationError('Некорректный Id');
+        next(new ValidationError('Некорректный Id'));
       }
       next(err);
     })
@@ -53,7 +53,7 @@ const createUser = (req, res, next) => {
       }))
     .then((user) => {
       if (!user) {
-        throw new NotFoundError('Не удалось создать пользователя');
+        next(new NotFoundError('Не удалось создать пользователя'));
       }
       return res.status(200).send({
         name: user.name,
@@ -66,12 +66,11 @@ const createUser = (req, res, next) => {
     .catch((err) => {
       if (err.code === 11000) {
         res.status(409).send({ message: `Email '${err.keyValue.email}' уже занят` });
-        // throw new DuplicateError(`Email '${err.keyValue.email}' уже занят`);
+        // next(new DuplicateError(`Email '${err.keyValue.email}' уже занят`));
       }
       if (err.name === 'ValidationError') {
-        throw new ValidationError('Некорректные данные');
+        next(new ValidationError('Некорректные данные'));
       }
-      next();
     })
     .catch(next);
 };
@@ -82,10 +81,10 @@ const patchUser = (req, res, next) => {
   UserModel.findById(userId)
     .then((user) => {
       if (!user) {
-        throw new AutorizationError('Необходимо авторизоваться');
+        next(new AutorizationError('Необходимо авторизоваться'));
       }
       if (user.name === name || user.about === about) {
-        throw new DuplicateError('Данные совпадают');
+        next(new DuplicateError('Данные совпадают'));
       }
       UserModel
         .findByIdAndUpdate(
@@ -95,7 +94,7 @@ const patchUser = (req, res, next) => {
         )
         .then((newUser) => {
           if (!newUser) {
-            throw new ValidationError('Некорректные данные');
+            next(new ValidationError('Некорректные данные'));
           }
           res.status(200).send({
             name: newUser.name,
@@ -107,7 +106,7 @@ const patchUser = (req, res, next) => {
         })
         .catch((err) => {
           if (err.name === 'ValidationError') {
-            throw new ValidationError('Некорректные данные');
+            next(new ValidationError('Некорректные данные'));
           }
           next(err);
         });
@@ -120,7 +119,7 @@ const getCurrentUser = (req, res, next) => {
   UserModel.findById(userId)
     .then((user) => {
       if (!user) {
-        throw new NotFoundError('Пользователь не найден');
+        next(new NotFoundError('Пользователь не найден'));
       }
       return res.status(200).send({
         name: user.name,
@@ -139,10 +138,10 @@ const patchUserAvatar = (req, res, next) => {
   UserModel.findById(userId)
     .then((user) => {
       if (!user) {
-        throw new AutorizationError('Необходимо авторизоваться');
+        next(new AutorizationError('Необходимо авторизоваться'));
       }
       if (user.avatar === avatar) {
-        throw new DuplicateError('Аватар совпадает с прежним');
+        next(new DuplicateError('Аватар совпадает с прежним'));
       }
       UserModel.findByIdAndUpdate(
         userId,
@@ -168,14 +167,13 @@ const login = (req, res, next) => {
   return UserModel.findOne({ email })
     .then((user) => {
       if (!user) {
-        throw new AutorizationError('Ошибка авторизации');
+        next(new AutorizationError('Неверный логин или пароль'));
       }
       if (!bcrypt.compare(password, user.password)) {
-        throw new AutorizationError('Ошибка авторизации');
+        next(new AutorizationError('Неверный логин или пароль'));
       }
       res.status(200).send({
         token: jwt.sign({ _id: user._id }, JWT_SECRET, { expiresIn: '7d' }),
-        user: user._id,
       });
     })
     .catch(next);
