@@ -64,12 +64,14 @@ const createUser = (req, res, next) => {
       });
     })
     .catch((err) => {
+      if (err.code === 11000) {
+        res.status(409).send({ message: `Email '${err.keyValue.email}' уже занят` });
+        // throw new DuplicateError(`Email '${err.keyValue.email}' уже занят`);
+      }
       if (err.name === 'ValidationError') {
         throw new ValidationError('Некорректные данные');
       }
-      if (err.code === 11000) {
-        throw new DuplicateError(`Email '${err.keyValue.email}' уже занят`);
-      }
+      next();
     })
     .catch(next);
 };
