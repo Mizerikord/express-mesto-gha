@@ -11,22 +11,27 @@ const NotFoundError = require('../errors/NotFoundError');
 const DuplicateError = require('../errors/NotFoundError');
 
 const getUsers = async (req, res, next) => {
-  try {
-    const users = await UserModel.find({});
-    res.send(users);
-  } catch (err) {
-    next(err);
-  }
+  await UserModel.find({})
+    .then((users) => {
+      res.status(200).send(users.map((user) => ({
+        name: user.name,
+        about: user.about,
+        avatar: user.avatar,
+        email: user.email,
+        _id: user._id,
+      })));
+    })
+    .catch(next);
 };
 
 const getUserById = (req, res, next) => {
   UserModel
     .findById(req.params.userId)
-    .orFail(() => {
-      throw new Error('Пользователь не найден');
-    })
     .then((user) => {
-      res.send(user);
+      if (!user) {
+        throw new NotFoundError('Пользователь не найден');
+      }
+      res.status(200).send(user);
     })
     .catch((err) => {
       if (err.message === 'NotFound') {
@@ -36,7 +41,8 @@ const getUserById = (req, res, next) => {
         throw new ValidationError('Некорректные данные');
       }
       next(err);
-    });
+    })
+    .catch(next);
 };
 
 const createUser = (req, res, next) => {
@@ -61,7 +67,6 @@ const createUser = (req, res, next) => {
       });
     })
     .catch((err) => {
-      console.log(err);
       if (err.name === 'ValidationError') {
         throw new ValidationError('Некорректные данные');
       }
@@ -74,19 +79,38 @@ const createUser = (req, res, next) => {
 
 const patchUser = (req, res, next) => {
   const { name, about } = req.body;
-  UserModel
-    .findByIdAndUpdate(
-      req.user._id,
-      { name, about },
-      { new: true, runValidators: true },
-    )
-    .then((user) => { res.status(200).send({ user }); })
-    .catch((err) => {
-      if (err.name === 'ValidationError') {
-        throw new ValidationError('Некорректные данные');
+  const userId = req.user._id;
+  UserModel.findById(userId)
+    .then((user) => {
+      if (!user) {
+        throw new AutorizationError('Необходимо авторизоваться');
       }
-      next(err);
-    });
+      if (user.name === name && user.about === about) {
+        throw new DuplicateError('Данные совпадают');
+      }
+      UserModel
+        .findByIdAndUpdate(
+          req.user._id,
+          { name, about },
+          { new: true, runValidators: true },
+        )
+        .then(() => {
+          res.status(200).send({
+            name: user.name,
+            about: user.about,
+            avatar: user.avatar,
+            email: user.email,
+            _id: user._id,
+          });
+        })
+        .catch((err) => {
+          if (err.name === 'ValidationError') {
+            throw new ValidationError('Некорректные данные');
+          }
+          next(err);
+        });
+    })
+    .catch(next);
 };
 
 const getCurrentUser = (req, res, next) => {
@@ -109,12 +133,31 @@ const getCurrentUser = (req, res, next) => {
 
 const patchUserAvatar = (req, res, next) => {
   const { avatar } = req.body;
-  UserModel.findByIdAndUpdate(
-    req.user._id,
-    { avatar },
-    { new: true, runValidators: true },
-  )
-    .then((user) => { res.send({ data: user }); })
+  const userId = req.user._id;
+  UserModel.findById(userId)
+    .then((user) => {
+      if (!user) {
+        throw new AutorizationError('Необходимо авторизоваться');
+      }
+      if (user.avatar === avatar) {
+        throw new DuplicateError('Аватар совпадает с прежним');
+      }
+      UserModel.findByIdAndUpdate(
+        userId,
+        { avatar },
+        { new: true, runValidators: true },
+      )
+        .then(() => {
+          res.status(200).send({
+            name: user.name,
+            about: user.about,
+            avatar: user.avatar,
+            email: user.email,
+            _id: user._id,
+          });
+        })
+        .catch(next);
+    })
     .catch(next);
 };
 
@@ -128,7 +171,7 @@ const login = (req, res, next) => {
       if (!bcrypt.compare(password, user.password)) {
         throw new AutorizationError('Ошибка авторизации');
       }
-      res.send({
+      res.status(200).send({
         token: jwt.sign({ _id: user._id }, JWT_SECRET, { expiresIn: '7d' }),
       });
     })

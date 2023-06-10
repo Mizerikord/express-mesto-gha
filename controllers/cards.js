@@ -3,19 +3,26 @@ const NotFoundError = require('../errors/NotFoundError');
 const ForbiddenError = require('../errors/ForbiddenError');
 const ValidationError = require('../errors/ValidationErrors');
 
-const getCards = async (req, res) => {
-  try {
-    const cards = await CardModel.find({});
-    res.send(cards);
-  } catch (err) {
-    throw new NotFoundError('Ничего не найдено');
-  }
+const getCards = async (req, res, next) => {
+  await CardModel.find({})
+    .then((cards) => {
+      res.status(200).send(cards.map((card) => ({
+        name: card.name,
+        link: card.email,
+        owner: card.owner,
+        likes: card.likes,
+        _id: card._id,
+        createdAt: card.createdAt,
+      })));
+    })
+    .catch(next);
 };
 
 const createCard = (req, res, next) => {
   CardModel
     .create({ ...req.body, owner: req.user._id })
     .then((card) => {
+      console.log(card._id);
       res.status(201).send(card);
     })
     .catch((err) => {
@@ -59,8 +66,17 @@ const cardLike = (req, res, next) => {
     if (!card) {
       throw new NotFoundError('Карточка не найдена');
     }
-    res.send({ message: 'Лайк' });
+    res.status(200).send({ message: 'Лайк' });
   })
+    .catch((err) => {
+      if (err.message === 'NotFound') {
+        throw new NotFoundError('Карточка не найдена');
+      }
+      if (err.name === 'CastError') {
+        throw new ValidationError('Некорректные данные карточки');
+      }
+      next(err);
+    })
     .catch(next);
 };
 
@@ -74,7 +90,7 @@ const cardLikeDelete = (req, res, next) => {
       if (!card) {
         throw new NotFoundError('Карточка не найдена');
       }
-      res.send({ like: card.likes, message: 'ДизЛайк' });
+      res.status(200).send({ like: card.likes, message: 'ДизЛайк' });
     })
     .catch(next);
 };
