@@ -79,7 +79,7 @@ const cardLike = (req, res, next) => {
     if (!card) {
       next(new NotFoundError('Карточка не найдена'));
     }
-    res.status(200).send({ like: card.likes, message: 'Лайк' });
+    res.status(200).send({ like: card.likes, message: 'Лайк успешно поставлен' });
   })
     .catch((err) => {
       if (err.message === 'NotFound') {
