@@ -40,4 +40,6 @@ const validateUserData = celebrate({
   }),
 });
 
-module.exports = { validateUser, validateCard, validateAvatar, validateUserData };
+module.exports = {
+  validateUser, validateCard, validateAvatar, validateUserData,
+};

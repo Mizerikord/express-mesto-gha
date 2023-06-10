@@ -13,12 +13,12 @@ const DuplicateError = require('../errors/NotFoundError');
 const getUsers = async (req, res, next) => {
   await UserModel.find({})
     .then((users) => {
-      res.status(200).send(users.map((user) => ({
-        name: user.name,
-        about: user.about,
-        avatar: user.avatar,
-        email: user.email,
-        _id: user._id,
+      res.status(200).send(users.map((carrentUser) => ({
+        name: carrentUser.name,
+        about: carrentUser.about,
+        avatar: carrentUser.avatar,
+        email: carrentUser.email,
+        _id: carrentUser._id,
       })));
     })
     .catch(next);
@@ -34,11 +34,8 @@ const getUserById = (req, res, next) => {
       res.status(200).send(user);
     })
     .catch((err) => {
-      if (err.message === 'NotFound') {
-        throw new NotFoundError('Пользователь не найден');
-      }
       if (err.name === 'CastError') {
-        throw new ValidationError('Некорректные данные');
+        throw new ValidationError('Некорректный Id');
       }
       next(err);
     })
@@ -85,7 +82,7 @@ const patchUser = (req, res, next) => {
       if (!user) {
         throw new AutorizationError('Необходимо авторизоваться');
       }
-      if (user.name === name && user.about === about) {
+      if (user.name === name || user.about === about) {
         throw new DuplicateError('Данные совпадают');
       }
       UserModel
@@ -94,13 +91,16 @@ const patchUser = (req, res, next) => {
           { name, about },
           { new: true, runValidators: true },
         )
-        .then(() => {
+        .then((newUser) => {
+          if (!newUser) {
+            throw new ValidationError('Некорректные данные');
+          }
           res.status(200).send({
-            name: user.name,
-            about: user.about,
-            avatar: user.avatar,
-            email: user.email,
-            _id: user._id,
+            name: newUser.name,
+            about: newUser.about,
+            avatar: newUser.avatar,
+            email: newUser.email,
+            _id: newUser._id,
           });
         })
         .catch((err) => {
@@ -147,13 +147,13 @@ const patchUserAvatar = (req, res, next) => {
         { avatar },
         { new: true, runValidators: true },
       )
-        .then(() => {
+        .then((newUser) => {
           res.status(200).send({
-            name: user.name,
-            about: user.about,
-            avatar: user.avatar,
-            email: user.email,
-            _id: user._id,
+            name: newUser.name,
+            about: newUser.about,
+            avatar: newUser.avatar,
+            email: newUser.email,
+            _id: newUser._id,
           });
         })
         .catch(next);
@@ -173,6 +173,7 @@ const login = (req, res, next) => {
       }
       res.status(200).send({
         token: jwt.sign({ _id: user._id }, JWT_SECRET, { expiresIn: '7d' }),
+        user: user._id,
       });
     })
     .catch(next);

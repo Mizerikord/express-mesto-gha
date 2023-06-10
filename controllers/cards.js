@@ -22,8 +22,13 @@ const createCard = (req, res, next) => {
   CardModel
     .create({ ...req.body, owner: req.user._id })
     .then((card) => {
-      console.log(card._id);
-      res.status(201).send(card);
+      res.status(201).send({
+        name: card.name,
+        link: card.link,
+        owner: card.owner,
+        likes: card.likes,
+        createdAt: card.createdAt,
+      });
     })
     .catch((err) => {
       if (err.name === 'ValidationError') {
@@ -35,14 +40,14 @@ const createCard = (req, res, next) => {
 
 const deleteCard = (req, res, next) => {
   const { cardId } = req.params;
-  console.log(cardId);
   const userId = req.user._id;
   CardModel.findById(cardId)
     .then((card) => {
+      const owner = card.owner.toString();
       if (!card) {
         throw new NotFoundError('Карточка не найдена');
       }
-      if (card.owner !== userId) {
+      if (owner !== userId) {
         throw new ForbiddenError('Не твое, не трогай!');
       }
       CardModel
@@ -53,6 +58,12 @@ const deleteCard = (req, res, next) => {
             message: 'Карточка успешно удалена',
           });
         });
+    })
+    .catch((err) => {
+      if (err.name === 'NotFoundError') {
+        throw new NotFoundError('Карточка не найдена');
+      }
+      next();
     })
     .catch(next);
 };
@@ -66,14 +77,14 @@ const cardLike = (req, res, next) => {
     if (!card) {
       throw new NotFoundError('Карточка не найдена');
     }
-    res.status(200).send({ message: 'Лайк' });
+    res.status(200).send({ like: card.likes, message: 'Лайк' });
   })
     .catch((err) => {
       if (err.message === 'NotFound') {
         throw new NotFoundError('Карточка не найдена');
       }
       if (err.name === 'CastError') {
-        throw new ValidationError('Некорректные данные карточки');
+        throw new ValidationError('Карточка с таким id не найдена');
       }
       next(err);
     })
@@ -91,6 +102,11 @@ const cardLikeDelete = (req, res, next) => {
         throw new NotFoundError('Карточка не найдена');
       }
       res.status(200).send({ like: card.likes, message: 'ДизЛайк' });
+    })
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        throw new ValidationError('Карточка с таким id не найдена');
+      }
     })
     .catch(next);
 };
