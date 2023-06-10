@@ -11,7 +11,9 @@ const validateUser = celebrate({
     email: Joi.string().email().required(),
     password: Joi.string().required(),
   }),
-  _id: Joi.string().hex().length(24),
+  params: Joi.object({
+    userId: Joi.string().hex().length(24),
+  }),
 });
 
 const validateCard = celebrate({
@@ -21,7 +23,9 @@ const validateCard = celebrate({
       // eslint-disable-next-line no-useless-escape
       .regex(/^https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)$/),
   }),
-  _id: Joi.string().hex().length(24),
+  params: Joi.object({
+    cardId: Joi.string().hex().length(24),
+  }),
 });
 
 const validateAvatar = celebrate({

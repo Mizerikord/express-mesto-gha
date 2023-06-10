@@ -70,6 +70,7 @@ const deleteCard = (req, res, next) => {
 };
 
 const cardLike = (req, res, next) => {
+  console.log(req.params);
   CardModel.findByIdAndUpdate(
     req.params.cardId,
     { $addToSet: { likes: req.user._id } },
