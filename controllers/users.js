@@ -73,7 +73,7 @@ const createUser = (req, res, next) => {
     })
     .catch((err) => {
       if (err.code === 11000) {
-        res.status(409).send({ message: `Email '${err.keyValue.email}' уже занят` });
+        next(new DuplicateError({ message: `Email '${err.keyValue.email}' уже занят` }));
       }
       if (err.name === 'ValidationError') {
         next(new ValidationError('Некорректные данные'));
