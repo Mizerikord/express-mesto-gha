@@ -30,6 +30,7 @@ const getUserById = (req, res, next) => {
     .then((user) => {
       if (!user) {
         next(new NotFoundError('Пользователь не найден'));
+        return;
       }
       res.status(200).send({
         name: user.name,
@@ -40,9 +41,9 @@ const getUserById = (req, res, next) => {
       });
     })
     .catch((err) => {
-      console.log(err);
       if (err.name === 'CastError') {
         next(new ValidationError('Некорректный Id'));
+        return;
       }
       next(err);
     })
@@ -60,9 +61,9 @@ const createUser = (req, res, next) => {
       }))
     .then((user) => {
       if (!user) {
-        next(new NotFoundError('Не удалось создать пользователя'));
+        return next(new NotFoundError('Не удалось создать пользователя'));
       }
-      return res.status(200).send({
+      return res.status(201).send({
         name: user.name,
         about: user.about,
         avatar: user.avatar,
@@ -73,11 +74,12 @@ const createUser = (req, res, next) => {
     .catch((err) => {
       if (err.code === 11000) {
         res.status(409).send({ message: `Email '${err.keyValue.email}' уже занят` });
-        // next(new DuplicateError(`Email '${err.keyValue.email}' уже занят`));
       }
       if (err.name === 'ValidationError') {
         next(new ValidationError('Некорректные данные'));
+        return;
       }
+      next(err);
     })
     .catch(next);
 };
@@ -89,9 +91,11 @@ const patchUser = (req, res, next) => {
     .then((user) => {
       if (!user) {
         next(new AutorizationError('Необходимо авторизоваться'));
+        return;
       }
       if (user.name === name || user.about === about) {
         next(new DuplicateError('Данные совпадают'));
+        return;
       }
       UserModel
         .findByIdAndUpdate(
@@ -102,6 +106,7 @@ const patchUser = (req, res, next) => {
         .then((newUser) => {
           if (!newUser) {
             next(new ValidationError('Некорректные данные'));
+            return;
           }
           res.status(200).send({
             name: newUser.name,
@@ -114,6 +119,7 @@ const patchUser = (req, res, next) => {
         .catch((err) => {
           if (err.name === 'ValidationError') {
             next(new ValidationError('Некорректные данные'));
+            return;
           }
           next(err);
         });
@@ -126,7 +132,7 @@ const getCurrentUser = (req, res, next) => {
   UserModel.findById(userId)
     .then((user) => {
       if (!user) {
-        next(new NotFoundError('Пользователь не найден'));
+        return next(new NotFoundError('Пользователь не найден'));
       }
       return res.status(200).send({
         name: user.name,
@@ -146,9 +152,11 @@ const patchUserAvatar = (req, res, next) => {
     .then((user) => {
       if (!user) {
         next(new AutorizationError('Необходимо авторизоваться'));
+        return;
       }
       if (user.avatar === avatar) {
         next(new DuplicateError('Аватар совпадает с прежним'));
+        return;
       }
       UserModel.findByIdAndUpdate(
         userId,
@@ -175,9 +183,11 @@ const login = (req, res, next) => {
     .then((user) => {
       if (!user) {
         next(new AutorizationError('Неверный логин или пароль'));
+        return;
       }
       if (!bcrypt.compare(password, user.password)) {
         next(new AutorizationError('Неверный логин или пароль'));
+        return;
       }
       res.status(200).send({
         token: jwt.sign({ _id: user._id }, JWT_SECRET, { expiresIn: '7d' }),

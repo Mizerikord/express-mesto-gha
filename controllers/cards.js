@@ -34,7 +34,9 @@ const createCard = (req, res, next) => {
     .catch((err) => {
       if (err.name === 'ValidationError') {
         next(new ValidationError('Некорректные данные'));
+        return;
       }
+      next(err);
     })
     .catch(next);
 };
@@ -47,9 +49,11 @@ const deleteCard = (req, res, next) => {
       const owner = card.owner.toString();
       if (!card) {
         next(new NotFoundError('Карточка не найдена'));
+        return;
       }
       if (owner !== userId) {
         next(new ForbiddenError('Не твое, не трогай!'));
+        return;
       }
       CardModel
         .findByIdAndRemove(cardId)
@@ -63,6 +67,7 @@ const deleteCard = (req, res, next) => {
     .catch((err) => {
       if (err.name === 'NotFoundError') {
         next(new NotFoundError('Карточка не найдена'));
+        return;
       }
       next();
     })
@@ -78,15 +83,18 @@ const cardLike = (req, res, next) => {
   ).then((card) => {
     if (!card) {
       next(new NotFoundError('Карточка не найдена'));
+      return;
     }
     res.status(200).send({ like: card.likes, message: 'Лайк успешно поставлен' });
   })
     .catch((err) => {
       if (err.message === 'NotFound') {
         next(new NotFoundError('Карточка не найдена'));
+        return;
       }
       if (err.name === 'CastError') {
         next(new ValidationError('Карточка с таким id не найдена'));
+        return;
       }
       next(err);
     })
@@ -102,13 +110,16 @@ const cardLikeDelete = (req, res, next) => {
     .then((card) => {
       if (!card) {
         next(new NotFoundError('Карточка не найдена'));
+        return;
       }
       res.status(200).send({ like: card.likes, message: 'ДизЛайк' });
     })
     .catch((err) => {
       if (err.name === 'CastError') {
         next(new ValidationError('Карточка с таким id не найдена'));
+        return;
       }
+      next(err);
     })
     .catch(next);
 };
