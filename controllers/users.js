@@ -8,7 +8,7 @@ const { JWT_SECRET = 'eb28135ebcfc17578f96d4d65b6c7871f2c803be4180c165061d5c2db6
 const ValidationError = require('../errors/ValidationErrors');
 const AutorizationError = require('../errors/AutorizationErrors');
 const NotFoundError = require('../errors/NotFoundError');
-const DuplicateError = require('../errors/NotFoundError');
+const DuplicateError = require('../errors/DuplicateError');
 
 const getUsers = async (req, res, next) => {
   await UserModel.find({})
