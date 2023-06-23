@@ -8,7 +8,7 @@ const getCards = async (req, res, next) => {
     .then((cards) => {
       res.status(200).send(cards.map((card) => ({
         name: card.name,
-        link: card.email,
+        link: card.link,
         owner: card.owner,
         likes: card.likes,
         _id: card._id,
@@ -75,17 +75,16 @@ const deleteCard = (req, res, next) => {
 };
 
 const cardLike = (req, res, next) => {
-  console.log(req.params);
   CardModel.findByIdAndUpdate(
     req.params.cardId,
     { $addToSet: { likes: req.user._id } },
     { new: true },
-  ).then((card) => {
-    if (!card) {
+  ).then((newCard) => {
+    if (!newCard) {
       next(new NotFoundError('Карточка не найдена'));
       return;
     }
-    res.status(200).send({ like: card.likes, message: 'Лайк успешно поставлен' });
+    res.status(200).send(newCard);
   })
     .catch((err) => {
       if (err.message === 'NotFound') {
@@ -112,7 +111,7 @@ const cardLikeDelete = (req, res, next) => {
         next(new NotFoundError('Карточка не найдена'));
         return;
       }
-      res.status(200).send({ like: card.likes, message: 'ДизЛайк' });
+      res.status(200).send(card);
     })
     .catch((err) => {
       if (err.name === 'CastError') {

@@ -7,16 +7,15 @@ const auth = require('./middlewares/auth');
 const { errorHandler } = require('./middlewares/errorHandler');
 
 const app = express();
-const { PORT = 3000 } = process.env;
+const { PORT = 3001 } = process.env;
 
 app.use(express.json());
 
 mongoose.connect('mongodb://127.0.0.1:27017/mestodb')
   .then(() => {
-    console.log({ message: 'Есть контакт' });
+    console.log({ message: 'Соединение установлено' });
   })
-  .catch((err) => {
-    console.log(err);
+  .catch(() => {
     process.exit();
   });
 
@@ -27,5 +26,7 @@ app.use(errors()); // Валидация через Joi
 app.use(errorHandler); // Централизованная обработка ошибок
 
 app.listen(PORT, () => {
-  console.log({ message: `Сервер работает на порту ${PORT}` });
+  console.log(`App listening on port ${PORT}`);
 });
+
+module.exports = app;

@@ -63,13 +63,15 @@ const createUser = (req, res, next) => {
       if (!user) {
         return next(new NotFoundError('Не удалось создать пользователя'));
       }
-      return res.status(201).send({
-        name: user.name,
-        about: user.about,
-        avatar: user.avatar,
-        email: user.email,
-        _id: user._id,
-      });
+      return res.status(201).send(
+        {
+          name: user.name,
+          about: user.about,
+          avatar: user.avatar,
+          email: user.email,
+          _id: user._id,
+        },
+      );
     })
     .catch((err) => {
       if (err.code === 11000) {
@@ -94,7 +96,7 @@ const patchUser = (req, res, next) => {
         next(new AutorizationError('Необходимо авторизоваться'));
         return;
       }
-      if (user.name === name || user.about === about) {
+      if (user.name === name && user.about === about) {
         next(new DuplicateError('Данные совпадают'));
         return;
       }
